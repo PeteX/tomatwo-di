@@ -4,7 +4,8 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>Tomatwo.DependencyInjection</PackageId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.0.1</Version>
+    <PackageDescription>Property and field injection for .NET Core's built in DI container.</PackageDescription>
+    <Version>0.0.2</Version>
     <Authors>Pete Chown</Authors>
     <Company>Tomatwo.Com</Company>
   </PropertyGroup>
