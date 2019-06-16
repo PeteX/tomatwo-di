@@ -1,5 +1,7 @@
 # Tomatwo.DependencyInjection
 
+[![Nuget](https://img.shields.io/nuget/v/Tomatwo.DependencyInjection.svg)](https://www.nuget.org/packages/Tomatwo.DependencyInjection/)
+
 There are a lot of dependency injection frameworks that can be used with ASP.NET Core, but the built in injector is fast and adequate for most purposes.  A notable feature that is not provided, though, is injection into properties or fields.  Property injection is controversial and probably it was left out for that reason.
 
 Tomatwo-DI provides injection into properties and fields (you choose which) without replacing the normal built in injector.  It scans the registered services looking for classes which use property or field injection, and creating a wrapper which implements the necessary logic.  This is done in the `Startup` class's `ConfigureServices` method:
