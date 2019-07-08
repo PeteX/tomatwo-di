@@ -1,2 +1,4 @@
-/bin/
-/obj/
+/di/bin/
+/di/obj/
+/test/bin/
+/test/obj/
