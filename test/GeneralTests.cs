@@ -1,4 +1,5 @@
 using System;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Tomatwo.DependencyInjection;
@@ -15,7 +16,8 @@ namespace DependencyInjectionTest
             var serviceCollection = new ServiceCollection()
                 .AddSingleton<InjectionService>()
                 .AddSingleton<InjectThisService>()
-                .AddSingleton<InterceptionService>();
+                .AddSingleton<InterceptionService>()
+                .AddSingleton<AttributesService>();
 
             serviceCollection.AddEnhancedServiceProvider(provider =>
             {
@@ -92,6 +94,85 @@ namespace DependencyInjectionTest
                     provider.AddInterceptor<SimpleInterceptAttribute>(interception => 2);
                 });
             });
+        }
+
+        [Test]
+        public void TestAttributeClassWithoutParameter()
+        {
+            var service = serviceProvider.GetService<AttributesService>();
+            var attributes = service.GetType().GetCustomAttributes(typeof(ApiControllerAttribute), false);
+            Assert.AreEqual(1, attributes.Length);
+            ApiControllerAttribute attribute = attributes[0] as ApiControllerAttribute;
+            Assert.IsNotNull(attribute);
+        }
+
+        [Test]
+        public void TestAttributeClassWithParameters()
+        {
+            var service = serviceProvider.GetService<AttributesService>();
+            var attributes = service.GetType().GetCustomAttributes(typeof(RouteAttribute), false);
+            Assert.AreEqual(1, attributes.Length);
+            RouteAttribute attribute = (RouteAttribute)attributes[0];
+            Assert.AreEqual("class-attr", attribute.Template);
+            Assert.AreEqual(345, attribute.Order);
+        }
+
+        [Test]
+        public void TestAttributeMethodWithoutParameter()
+        {
+            var service = serviceProvider.GetService<AttributesService>();
+            var method = service.GetType().GetMethod("MethodWithoutParameter");
+            var attributes = method.GetCustomAttributes(typeof(HttpGetAttribute), false);
+            Assert.AreEqual(1, attributes.Length);
+            HttpGetAttribute attribute = (HttpGetAttribute)attributes[0];
+            Assert.IsNull(attribute.Template);
+        }
+
+        [Test]
+        public void TestAttributeMethodWithParameter()
+        {
+            var service = serviceProvider.GetService<AttributesService>();
+            var method = service.GetType().GetMethod("MethodWithParameter");
+            var attributes = method.GetCustomAttributes(typeof(HttpGetAttribute), false);
+            Assert.AreEqual(1, attributes.Length);
+            HttpGetAttribute attribute = (HttpGetAttribute)attributes[0];
+            Assert.AreEqual("httpget", attribute.Template);
+        }
+
+        [Test]
+        public void TestAttributeMethodWithNamedParameter()
+        {
+            var service = serviceProvider.GetService<AttributesService>();
+            var method = service.GetType().GetMethod("MethodWithNamedParameter");
+            var attributes = method.GetCustomAttributes(typeof(HttpGetAttribute), false);
+            Assert.AreEqual(1, attributes.Length);
+            HttpGetAttribute attribute = (HttpGetAttribute)attributes[0];
+            Assert.AreEqual("param", attribute.Template);
+            Assert.AreEqual(123, attribute.Order);
+        }
+
+        [Test]
+        public void TestAttributeArgWithoutParameter()
+        {
+            var service = serviceProvider.GetService<AttributesService>();
+            var method = service.GetType().GetMethod("ArgWithoutParameter");
+            var arg = method.GetParameters()[0];
+            var attributes = arg.GetCustomAttributes(typeof(FromHeaderAttribute), false);
+            Assert.AreEqual(1, attributes.Length);
+            FromHeaderAttribute attribute = (FromHeaderAttribute)attributes[0];
+            Assert.IsNull(attribute.Name);
+        }
+
+        [Test]
+        public void TestAttributeArgWithNamedParameter()
+        {
+            var service = serviceProvider.GetService<AttributesService>();
+            var method = service.GetType().GetMethod("ArgWithNamedParameter");
+            var arg = method.GetParameters()[0];
+            var attributes = arg.GetCustomAttributes(typeof(FromHeaderAttribute), false);
+            Assert.AreEqual(1, attributes.Length);
+            FromHeaderAttribute attribute = (FromHeaderAttribute)attributes[0];
+            Assert.AreEqual("header", attribute.Name);
         }
     }
 }

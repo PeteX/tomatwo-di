@@ -110,6 +110,60 @@ namespace Tomatwo.DependencyInjection
             return fieldInfo;
         }
 
+        private void copyMethodAttributes(MethodInfo method, MethodBuilder methodBuilder)
+        {
+            foreach(var attributeData in method.CustomAttributes)
+            {
+                var fields = attributeData.NamedArguments.Where(x => x.IsField).ToList();
+                var properties = attributeData.NamedArguments.Where(x => !x.IsField).ToList();
+
+                methodBuilder.SetCustomAttribute(new CustomAttributeBuilder(
+                    attributeData.Constructor,
+                    attributeData.ConstructorArguments.Select(x => x.Value).ToArray(),
+                    properties.Select(x => (PropertyInfo)x.MemberInfo).ToArray(),
+                    properties.Select(x => x.TypedValue.Value).ToArray(),
+                    fields.Select(x => (FieldInfo)x.MemberInfo).ToArray(),
+                    fields.Select(x => x.TypedValue.Value).ToArray()));
+            }
+
+            var param = method.GetParameters();
+            for (int i = 0; i < param.Length; i++)
+            {
+                var parameterBuilder = methodBuilder.DefineParameter(i + 1, param[i].Attributes, param[i].Name);
+
+                foreach(var attributeData in param[i].CustomAttributes)
+                {
+                    var fields = attributeData.NamedArguments.Where(x => x.IsField).ToList();
+                    var properties = attributeData.NamedArguments.Where(x => !x.IsField).ToList();
+
+                    parameterBuilder.SetCustomAttribute(new CustomAttributeBuilder(
+                        attributeData.Constructor,
+                        attributeData.ConstructorArguments.Select(x => x.Value).ToArray(),
+                        properties.Select(x => (PropertyInfo)x.MemberInfo).ToArray(),
+                        properties.Select(x => x.TypedValue.Value).ToArray(),
+                        fields.Select(x => (FieldInfo)x.MemberInfo).ToArray(),
+                        fields.Select(x => x.TypedValue.Value).ToArray()));
+                }
+            }
+        }
+
+        private void copyClassAttributes(Type cls, TypeBuilder typeBuilder)
+        {
+            foreach(var attributeData in cls.CustomAttributes)
+            {
+                var fields = attributeData.NamedArguments.Where(x => x.IsField).ToList();
+                var properties = attributeData.NamedArguments.Where(x => !x.IsField).ToList();
+
+                typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(
+                    attributeData.Constructor,
+                    attributeData.ConstructorArguments.Select(x => x.Value).ToArray(),
+                    properties.Select(x => (PropertyInfo)x.MemberInfo).ToArray(),
+                    properties.Select(x => x.TypedValue.Value).ToArray(),
+                    fields.Select(x => (FieldInfo)x.MemberInfo).ToArray(),
+                    fields.Select(x => x.TypedValue.Value).ToArray()));
+            }
+        }
+
         private void wrapMethod(Type cls, TypeBuilder typeBuilder, MethodInfo method)
         {
             if ((method.Attributes & MethodAttributes.Virtual) == 0)
@@ -144,15 +198,13 @@ namespace Tomatwo.DependencyInjection
                     .SetValue(null, new Interception { Method = method });
             };
 
-            var param = method.GetParameters();
-
             var methodBuilder = typeBuilder.DefineMethod(method.Name, method.Attributes, method.ReturnType,
                 method.GetParameters().Select(x => x.ParameterType).ToArray());
 
-            for (int i = 1; i < param.Length; i++)
-                methodBuilder.DefineParameter(i, param[i].Attributes, param[i].Name);
+            copyMethodAttributes(method, methodBuilder);
 
             var ilGenerator = methodBuilder.GetILGenerator();
+            var param = method.GetParameters();
 
             // The interceptor takes this Interception struct as a parameter, but it needs some fields filling in.
             ilGenerator.Emit(OpCodes.Ldsfld, interceptionField);
@@ -222,6 +274,8 @@ namespace Tomatwo.DependencyInjection
 
             TypeBuilder typeBuilder = moduleBuilder.DefineType(
                 $"DI_{cls.Name}", TypeAttributes.Public, cls);
+
+            copyClassAttributes(cls, typeBuilder);
 
             if (injectionTypes.Any())
                 wrapConstructor(cls, typeBuilder, injectionTypes, fieldInjects, propertyInjects);
