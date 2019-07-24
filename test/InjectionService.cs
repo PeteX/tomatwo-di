@@ -2,7 +2,7 @@
 
 namespace DependencyInjectionTest
 {
-    public class InjectionService
+    public class InjectionService : ITestInterface
     {
         [Inject] protected InjectThisService propertyService { private get; set; }
         [Inject] protected readonly InjectThisService fieldService;

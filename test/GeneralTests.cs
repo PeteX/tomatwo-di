@@ -174,5 +174,22 @@ namespace DependencyInjectionTest
             FromHeaderAttribute attribute = (FromHeaderAttribute)attributes[0];
             Assert.AreEqual("header", attribute.Name);
         }
+
+        [Test]
+        public void TestMultipleRegistrations()
+        {
+            var serviceCollection = new ServiceCollection()
+                .AddSingleton<InjectionService>()
+                .AddSingleton<ITestInterface, InjectionService>()
+                .AddSingleton<InjectThisService>();
+
+            serviceCollection.AddEnhancedServiceProvider();
+            serviceProvider = serviceCollection.BuildServiceProvider();
+
+            var service1 = serviceProvider.GetService<InjectionService>();
+            Assert.AreEqual("Hello World!", service1.GetFieldMessage());
+            var service2 = serviceProvider.GetService<ITestInterface>();
+            Assert.AreEqual("Hello World!", service2.GetPropertyMessage());
+        }
     }
 }

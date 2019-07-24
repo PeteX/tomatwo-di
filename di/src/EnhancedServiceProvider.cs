@@ -112,7 +112,7 @@ namespace Tomatwo.DependencyInjection
 
         private void copyMethodAttributes(MethodInfo method, MethodBuilder methodBuilder)
         {
-            foreach(var attributeData in method.CustomAttributes)
+            foreach (var attributeData in method.CustomAttributes)
             {
                 var fields = attributeData.NamedArguments.Where(x => x.IsField).ToList();
                 var properties = attributeData.NamedArguments.Where(x => !x.IsField).ToList();
@@ -131,7 +131,7 @@ namespace Tomatwo.DependencyInjection
             {
                 var parameterBuilder = methodBuilder.DefineParameter(i + 1, param[i].Attributes, param[i].Name);
 
-                foreach(var attributeData in param[i].CustomAttributes)
+                foreach (var attributeData in param[i].CustomAttributes)
                 {
                     var fields = attributeData.NamedArguments.Where(x => x.IsField).ToList();
                     var properties = attributeData.NamedArguments.Where(x => !x.IsField).ToList();
@@ -149,7 +149,7 @@ namespace Tomatwo.DependencyInjection
 
         private void copyClassAttributes(Type cls, TypeBuilder typeBuilder)
         {
-            foreach(var attributeData in cls.CustomAttributes)
+            foreach (var attributeData in cls.CustomAttributes)
             {
                 var fields = attributeData.NamedArguments.Where(x => x.IsField).ToList();
                 var properties = attributeData.NamedArguments.Where(x => !x.IsField).ToList();
@@ -294,6 +294,8 @@ namespace Tomatwo.DependencyInjection
 
         public EnhancedServiceProvider(IServiceCollection services, Action<EnhancedServiceProvider> config)
         {
+            Dictionary<Type, Type> derivedClasses = new Dictionary<Type, Type>();
+
             if (config != null)
                 config(this);
 
@@ -306,7 +308,12 @@ namespace Tomatwo.DependencyInjection
                 ServiceDescriptor service = services[i];
                 if (service.ImplementationType != null)
                 {
-                    Type impl = wrapClass(moduleBuilder, service.ImplementationType);
+                    if (!derivedClasses.TryGetValue(service.ImplementationType, out Type impl))
+                    {
+                        impl = wrapClass(moduleBuilder, service.ImplementationType);
+                        derivedClasses[service.ImplementationType] = impl;
+                    }
+
                     if (impl != null)
                         services[i] = new ServiceDescriptor(service.ServiceType, impl, service.Lifetime);
                 }
