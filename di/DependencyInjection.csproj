@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>Tomatwo.DependencyInjection</PackageId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageDescription>Property and field injection for .NET Core's built in DI container.</PackageDescription>
@@ -12,6 +12,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.2.0" />
+    <PackageReference Include="System.Reflection.Emit" Version="4.0.1" />
+    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.0.1" />
   </ItemGroup>
 
 </Project>
