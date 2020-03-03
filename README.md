@@ -46,3 +46,57 @@ Most .NET DI frameworks require a lot more access to the properties and fields t
 This technique provides two benefits.  Firstly, as already noted, the property and field access can be made much more restrictive.  Secondly, the injected values are available in the constructor, because the derived class constructor gets called first.  There is one disadvantage, which is that the object's identity may not be what you expect.
 
 Tomatwo-DI still needs development and one issue at the moment is that it doesn't provide good support for unit testing with restricted accessibility.  Your test framework will be unable to assign to the injection targets because of the `protected` accessibility level, and Tomatwo-DI won't provide an alternative.  You can, though, use reflection to set values you otherwise don't have access to.
+
+# Interception
+
+Tomatwo-DI now provides a simple interception facility.  This works by creating a derived class rather than a proxy, so you can only intercept `virtual` methods which have at least `protected` accessibility.  Using a derived class does, however, avoid overhead and it avoids odd behaviour that can occur when using proxies.  For example, if a method M in class C has an interceptor, calls to M from other methods in C will be intercepted correctly.  This usually fails when using a proxy.
+
+Currently, interception is always triggered by an attribute on the intercepted method.  First of all, the attribute must be defined:
+
+```
+[AttributeUsage(AttributeTargets.Method)]
+public class MyInterceptionAttribute : Attribute
+{
+}
+```
+
+The attribute is then set against all methods which are to be intercepted:
+
+```
+[MyInterception] public virtual int MyMethod()
+{
+    ...
+}
+```
+
+Finally the interceptor itself is registered, by adding a parameter to `AddEnhancedServiceProvider`:
+
+```
+serviceCollection.AddEnhancedServiceProvider(provider =>
+{
+    provider.AddInterceptor<MyInterceptionAttribute>(interception =>
+    {
+        ...
+    });
+});
+```
+
+The interceptor takes an argument, which is an Interception struct:
+```
+public struct Interception
+{
+    public object Target;
+    public object[] Args;
+    public Func<object, object[], object> Invoke;
+    public MethodInfo Method;
+}
+```
+
+This allows you to obtain the original target object, target method, and arguments.  You can also call the method, if you want to.
+
+* `Target` is the object on which the method was originally called.
+* `Args` are the original arguments to the method.
+* `Invoke` is a delegate which invokes the original method.  The first parameter is the target object, usually `Interception.Target`.  The second argument is the parameters which are being supplied to the method, `Interception.Args` if you don't want to make any changes.  The delegate returns an object which encapsulates the method's result.
+* `Method` gives you access to the original method via reflection.  If you want to call the method, though, use `Invoke`.  If you try to do this using reflection, the call will be intercepted again.
+
+If the interceptor returns a value, this will be treated as the method return value.
